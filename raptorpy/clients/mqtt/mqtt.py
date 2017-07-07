@@ -1,9 +1,13 @@
 from paho.mqtt.client import Client
+import logging
+import threading
 
 class MqttClient():
     default_config = {
         "host": "api.raptorbox.eu",
         "port": 1883,
+        "reconnect_min_delay": 1,
+        "reconnect_max_delay": 127,
     }
 
     def __init__(self, config):
@@ -26,9 +30,9 @@ class MqttClient():
             self.mqtt_client.reconnect_delay_set(
                 config["reconnect_min_delay"],
                 config["reconnect_max_delay"],)
-        # self.mqtt_client.tls_set()
-        self.mqtt_client.enable_logger()
+        # self.connection_thread = None
 
+        # self.mqtt_client.tls_set()
 
     def connect(self): #TODO consider srv field in dns
         '''
@@ -37,12 +41,15 @@ class MqttClient():
         '''
         self.mqtt_client.connect(self.config["host"], self.config["port"])
 
+        # self.mqtt_client.loop_forever()
         self.mqtt_client.loop_start()
 
     def subscribe(self, topic, callback):
         '''
         register 'callback' to "topic". Every message will be passed to callback in order to be executed
         '''
+        logging.debug("subscribing to topic: {}".format(topic))
+        self.mqtt_client.subscribe(topic)
         self.mqtt_client.message_callback_add(topic, callback)
 
     def unsubscribe(self, topic):
@@ -68,6 +75,6 @@ class MqttClient():
 
     def reconnect(self):
         '''
-        reconnects after a disconnection, this could be called after connection only
+        Reconnects after a disconnection, this could be called after connection only
         '''
         self.mqtt_client.reconnect()
